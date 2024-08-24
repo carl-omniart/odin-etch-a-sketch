@@ -50,6 +50,7 @@ hr {
 #grid {
   box-sizing: border-box;
   border: 0.25rem outset slategray;
+  background-color: ghostwhite;
 }
 
 .cell {

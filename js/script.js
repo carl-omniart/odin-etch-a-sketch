@@ -25,7 +25,7 @@ function getSquaresPerSide() {
 }
 
 function addRows(container, squares) {
-  for (let y = 0; y < squares; y++) container.appendChild(newRow(squares));
+  for (const y = 0; y < squares; y++) container.appendChild(newRow(squares));
 }
 
 function newRow(squares) {
@@ -36,7 +36,7 @@ function newRow(squares) {
 }
 
 function addCells(row, squares) {
-  for (let x = 0; x < squares; x++) row.appendChild(newCell());
+  for (const x = 0; x < squares; x++) row.appendChild(newCell());
 }
 
 function newCell() {
@@ -67,34 +67,44 @@ function setColor(cell) {
 }
 
 function newHue(hue) {
-  if (state.button.single ) return state.hue;
-  if (state.button.rainbow) return (state.hue = getNextHue(state.hue));
-  if (state.button.random ) return (state.hue = getRandomHue());
-  return hue;
+  if (buttons.single.active) {
+    return color.hue.value;
+  } else if (buttons.rainbow.active) {
+    color.hue.value = getNextHue(color.hue.value);
+    return color.hue.value;
+  } else if (buttons.random.active) {
+    color.hue.value = getRandomHue();
+    return color.hue.value;
+  } else if (buttons.complement.active) {
+    if (hue) hue = getNextHue(hue, 180);
+    return hue;
+  } else {
+    return hue
+  };
 }
 
-function newSaturation(saturation) {
+function newSaturation(saturation, step = color.saturation.step) {
   if (saturation) {
-    if (state.button.saturate   && saturation < 1) saturation += 0.1;
-    if (state.button.desaturate && saturation > 0) saturation -= 0.1;
+    if (buttons.saturate.active   && saturation + step < 1) saturation += step;
+    if (buttons.desaturate.active && saturation - step > 0) saturation -= step;
     return saturation;
   } else {
-    return 0.5;
+    return color.saturation.value;
   };
 }
 
-function newLightness(lightness) {
+function newLightness(lightness, step = color.lightness.step) {
   if (lightness) {
-    if (state.button.lighten && lightness < 1) lightness += 0.1;
-    if (state.button.darken  && lightness > 0) lightness -= 0.1;
+    if (buttons.lighten.active && lightness + step < 1.0) lightness += step;
+    if (buttons.darken.active  && lightness - step > 0.0) lightness -= step;
     return lightness;
   } else {
-    return 0.5;
+    return color.lightness.value;
   };
 }
 
-function getNextHue(hue, increment = 1) {
-  return ((hue + increment) % 360);
+function getNextHue(hue, step = color.hue.step) {
+  return ((hue + step) % 360);
 }
 
 function getRandomHue() {
@@ -103,78 +113,66 @@ function getRandomHue() {
 
 // Buttons
 
-function initiateButtons() {
-  page.button("resolution").addEventListener("click", onClickButtonResolution);
-  page.button(    "single").addEventListener("click", onClickButtonSingle    );
-  page.button(   "rainbow").addEventListener("click", onClickButtonRainbow   );
-  page.button(    "random").addEventListener("click", onClickButtonRandom    );
-  page.button(   "lighten").addEventListener("click", onClickButtonLighten   );
-  page.button(    "darken").addEventListener("click", onClickButtonDarken    );
-  page.button(  "saturate").addEventListener("click", onClickButtonSaturate  );
-  page.button("desaturate").addEventListener("click", onClickButtonDesaturate);
-  page.button(     "clear").addEventListener("click", onClickButtonClear     );
-
-  toggleButton("single");
-}
-
 function onClickButtonResolution() {
-  const userInput = prompt("How many squares per side? (1-100)");
-  const squares   = Number(userInput);
+  const message = `How many squares per side? (1-${MAX_SQUARES_PER_SIDE})`
+  const squares = Number(prompt(message));
   if (isValidResolution(squares)) newGrid(squares);
 }
 
 function onClickButtonSingle() {
   toggleButton("single");
-  if (areActive("single", "rainbow")) toggleButton("rainbow");
-  if (areActive("single",  "random")) toggleButton("random" );
+  if (buttons.single.active) turnOff("rainbow", "random", "complement");
 }
 
 function onClickButtonRainbow() {
   toggleButton("rainbow");
-  if (areActive("rainbow", "random")) toggleButton("random");
-  if (areActive("rainbow", "single")) toggleButton("single");
+  if (buttons.rainbow.active) turnOff("single", "random", "complement");
 }
 
 function onClickButtonRandom() {
   toggleButton("random");
-  if (areActive("random", "rainbow")) toggleButton("rainbow");
-  if (areActive("random",  "single")) toggleButton("single" );
+  if (buttons.random.active) turnOff("single", "rainbow", "complement");
+}
+
+function onClickButtonComplement() {
+  toggleButton("complement");
+  if (buttons.complement.active) turnOff("single", "rainbow", "random");
 }
 
 function onClickButtonLighten() {
   toggleButton("lighten");
-  if (areActive("lighten", "darken")) toggleButton("darken");
+  if (buttons.lighten.active) turnOff("darken");
 }
 
 function onClickButtonDarken() {
   toggleButton("darken");
-  if (areActive("darken", "lighten")) toggleButton("lighten");
+  if (buttons.darken.active) turnOff("lighten");
 }
 
 function onClickButtonSaturate() {
   toggleButton("saturate");
-  if (areActive("saturate", "desaturate")) toggleButton("desaturate");
+  if (buttons.saturate.active) turnOff("desaturate");
 }
 
 function onClickButtonDesaturate() {
   toggleButton("desaturate");
-  if (areActive("desaturate", "saturate")) toggleButton("saturate");
+  if (buttons.desaturate.active) turnOff("saturate");
 }
 
 function onClickButtonClear() {
   newGrid();
 }
 
-function areActive(...buttons) {
-  return buttons.reduce((flag, name) => flag && state.button[name], true);
-}
-
 function toggleButton(name) {
-  state.button[name] = !state.button[name];
+  buttons[name].active = !buttons[name].active
   page.button(name).classList.toggle("active");
 }
 
-// Values
+function turnOff(...buttonNames) {
+  for (const name of buttonNames) {
+    if (buttons[name].active) toggleButton(name);
+  };
+}
 
 function isValidResolution(squaresPerSide) {
   if (
@@ -189,7 +187,10 @@ function isValidResolution(squaresPerSide) {
   };
 }
 
-MAX_SQUARES_PER_SIDE = 100;
+// Constants
+
+DEFAULT_SQUARES_PER_SIDE =   19; // 19x19 = 361, and there are 360 hues
+MAX_SQUARES_PER_SIDE     =  100;
 
 const page = {
   grid:   document.getElementById("grid"),
@@ -198,18 +199,31 @@ const page = {
   button: function(id) { return document.querySelector(`button#${id}`) }
 };
 
-const state = {
-  hue:    getRandomHue(),
-  button: {
-    single:     false,
-    rainbow:    false,
-    random:     false,
-    lighten:    false,
-    darken:     false,
-    saturate:   false,
-    desaturate: false
-  }
+const color = {
+  hue:        { value: getRandomHue(), step:    1 },
+  saturation: { value:            0.5, step: 0.12 },
+  lightness:  { value:            0.5, step: 0.12 }
 }
 
-newGrid(16);
-initiateButtons();
+const buttons = {
+  single:     { active: false, handler: onClickButtonSingle     },
+  rainbow:    { active: false, handler: onClickButtonRainbow    },
+  random:     { active: false, handler: onClickButtonRandom     },
+  complement: { active: false, handler: onClickButtonComplement },
+  saturate:   { active: false, handler: onClickButtonSaturate   },
+  desaturate: { active: false, handler: onClickButtonDesaturate },
+  lighten:    { active: false, handler: onClickButtonLighten    },
+  darken:     { active: false, handler: onClickButtonDarken     },
+  clear:      { active: false, handler: onClickButtonClear      }
+}
+
+// Draw Grid!
+newGrid(DEFAULT_SQUARES_PER_SIDE);
+
+// Activate Buttons!
+for (const [name, button] of Object.entries(buttons)) {
+  page.button(name).addEventListener("click", button.handler);
+};
+
+// Turn the "Single" button on!
+toggleButton("single");
