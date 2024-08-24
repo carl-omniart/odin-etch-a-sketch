@@ -25,7 +25,7 @@ function getSquaresPerSide() {
 }
 
 function addRows(container, squares) {
-  for (const y = 0; y < squares; y++) container.appendChild(newRow(squares));
+  for (let y = 0; y < squares; y++) container.appendChild(newRow(squares));
 }
 
 function newRow(squares) {
@@ -36,7 +36,7 @@ function newRow(squares) {
 }
 
 function addCells(row, squares) {
-  for (const x = 0; x < squares; x++) row.appendChild(newCell());
+  for (let x = 0; x < squares; x++) row.appendChild(newCell());
 }
 
 function newCell() {
@@ -169,7 +169,7 @@ function toggleButton(name) {
 }
 
 function turnOff(...buttonNames) {
-  for (const name of buttonNames) {
+ for (let name of buttonNames) {
     if (buttons[name].active) toggleButton(name);
   };
 }
