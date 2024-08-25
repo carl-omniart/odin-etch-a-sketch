@@ -114,7 +114,6 @@ function getRandomHue() {
 // Buttons
 
 function onClickButtonResolution() {
-  console.log("in onClickButtonResolution");
   const message = `How many squares per side? (1-${MAX_SQUARES_PER_SIDE})`
   const squares = Number(prompt(message));
   if (isValidResolution(squares)) newGrid(squares);
